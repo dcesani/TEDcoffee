@@ -70,6 +70,25 @@ tedx_dataset_agg = tedx_dataset.join(tags_dataset_agg, tedx_dataset.idx == tags_
 
 tedx_dataset_agg.printSchema()
 
+#leggo il file watch_next_dataset
+next_dataset_path = "s3://ted-coffee-data/watch_next_dataset.csv"
+next_dataset = spark.read.option("header","true").csv(next_dataset_path)
+
+
+# CREATE THE AGGREGATE MODEL, ADD next_idx TO TEDX_DATASET
+#collect_set dato che non vogliamo doppioni
+next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").alias("next_idx"), collect_set("url").alias("next_url"))
+next_dataset_agg.printSchema()
+
+#join con il dataset originario (video+tags)
+tedx_dataset_agg = tedx_dataset.join(next_dataset_agg, tedx_dataset.idx == next_dataset_agg.idx_ref, "left") \
+    .drop("idx_ref") \
+    .select(col("idx").alias("_id"), col("*")) \
+    .drop("idx") \
+
+tedx_dataset_agg.printSchema()
+
+
 mongo_uri = "mongodb://mycluster-shard-00-00-ommtb.mongodb.net:27017,mycluster-shard-00-01-ommtb.mongodb.net:27017,mycluster-shard-00-02-ommtb.mongodb.net:27017"
 
 write_mongo_options = {
