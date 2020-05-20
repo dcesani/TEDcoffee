@@ -2,7 +2,7 @@
 import sys
 import json
 import pyspark
-from pyspark.sql.functions import col, collect_list, array_join
+from pyspark.sql.functions import col, collect_list, collect_set,  array_join
 #collect_list (funzione SQL avanzata) --> crea un array aggregato da una lista sparsa
 
 #import delle librerie per Glue
@@ -65,9 +65,39 @@ tags_dataset_agg.printSchema() #controllo se è giusto
 #.join(testata con i tag, condizione di join, tipo di join). rinomino poi le id (_id è il classico nome che da MongoDB agli id)
 tedx_dataset_agg = tedx_dataset.join(tags_dataset_agg, tedx_dataset.idx == tags_dataset_agg.idx_ref, "left") \
     .drop("idx_ref") \
-    .select(col("idx").alias("_id"), col("*")) \
-    .drop("idx") \
+    .select(col("*")) 
+   # .drop("idx") \
 
+tedx_dataset_agg.printSchema()
+
+# LETTURA FILE watch_next_dataset
+next_dataset_path = "s3://ted-coffee-data/watch_next_dataset.csv"
+next_dataset = spark.read.option("header","true").csv(next_dataset_path)
+
+# CREATE THE AGGREGATE MODEL
+# selezione delle sole tuple con URL di un talk.
+# collect_set per evitare duplicati.
+next_dataset = next_dataset.select("*").where(col("url").like("%com/talks/%"))
+next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").alias("next_idx"), collect_set("url").alias("next_url"))
+next_dataset_agg.printSchema()
+
+# ADD watch_next info TO TEDX_DATASET
+# (left) join con il dataset che verrà importato in MongoDB
+tedx_dataset_agg = tedx_dataset_agg.join(next_dataset_agg, tedx_dataset_agg.idx == next_dataset_agg.idx_ref, "left") \
+    .drop("idx_ref") \
+    .select(col("*"))
+tedx_dataset_agg.printSchema()
+
+# LETTURA FILE duration_dataset
+duration_dataset_path = "s3://ted-coffee-data/duration_dataset.csv"
+duration_dataset = spark.read.option("header","true").csv(duration_dataset_path)
+
+# ADD duration info TO TEDX_DATASET
+# (left) join con il dataset che verrà importato in MongoDB
+tedx_dataset_agg = tedx_dataset_agg.join(duration_dataset, tedx_dataset_agg.idx == duration_dataset.idx_ref, "left") \
+    .drop("idx_ref") \
+    .select(col("idx").alias("_id"), col("*")) \
+    .drop("idx")
 tedx_dataset_agg.printSchema()
 
 mongo_uri = "mongodb://mycluster-shard-00-00-ommtb.mongodb.net:27017,mycluster-shard-00-01-ommtb.mongodb.net:27017,mycluster-shard-00-02-ommtb.mongodb.net:27017"
