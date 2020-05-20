@@ -97,7 +97,10 @@ tedx_dataset_agg.printSchema()
 duration_dataset_path = "s3://ted-coffee-data/duration_dataset.csv"
 duration_dataset = spark.read.option("header","true").csv(duration_dataset_path)
 
-tedx_dataset_agg = tedx_dataset_agg.join(duration_dataset, tedx_dataset_agg.idx == duration_dataset.idx, "left") \
+duration_dataset=duration_dataset.select(col("idx").alias("idx_ref"),col("*"))
+
+tedx_dataset_agg = tedx_dataset_agg.join(duration_dataset, tedx_dataset_agg.idx == duration_dataset.idx_ref, "left") \
+    .drop("idx_ref") \
     .select(col("idx").alias("_id"), col("*")) \
     .drop("idx") \
 
