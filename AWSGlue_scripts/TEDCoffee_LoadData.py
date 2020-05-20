@@ -2,7 +2,7 @@
 import sys
 import json
 import pyspark
-from pyspark.sql.functions import col, collect_list, array_join
+from pyspark.sql.functions import col, collect_list, collect_set,  array_join
 #collect_list (funzione SQL avanzata) --> crea un array aggregato da una lista sparsa
 
 #import delle librerie per Glue
@@ -76,8 +76,8 @@ next_dataset = spark.read.option("header","true").csv(next_dataset_path)
 
 
 # CREATE THE AGGREGATE MODEL, ADD next_idx TO TEDX_DATASET
-#collect_set dato che non vogliamo doppioni
-next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").alias("next_idx"), collect_set("url").alias("next_url"))
+#collect_set dato che non vogliamo duplicati
+next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").distinct().alias("next_idx"), collect_set("url").alias("next_url"))
 next_dataset_agg.printSchema()
 
 #join con il dataset originario (video+tags)
