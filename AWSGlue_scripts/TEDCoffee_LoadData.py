@@ -77,7 +77,7 @@ next_dataset = spark.read.option("header","true").csv(next_dataset_path)
 
 # CREATE THE AGGREGATE MODEL, ADD next_idx TO TEDX_DATASET
 #collect_set dato che non vogliamo duplicati
-next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").distinct().alias("next_idx"), collect_set("url").alias("next_url"))
+next_dataset_agg = next_dataset.groupBy(col("idx").alias("idx_ref")).agg(collect_set("watch_next_idx").alias("next_idx"), collect_set("url").alias("next_url"))
 next_dataset_agg.printSchema()
 
 #join con il dataset originario (video+tags)
