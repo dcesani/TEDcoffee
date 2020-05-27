@@ -1,14 +1,14 @@
-const connect_to_db = require('./db'); //carico il DB, carica il file db.js
+const connect_to_db = require('./db_Shorter'); //carico il DB, carica il file db.js
 
 // GET BY TALK HANDLER
 
-const talk = require('./Talk'); //carico il modello dati nel file Talk.js
+const talk = require('./Talks_Shorter'); //carico il modello dati nel file Talk.js
 
 //gestisco l'evento
 //evento
 //contesto: non lo useremo
 //callback: 
-module.exports.get_by_tag = (event, context, callback) => {
+module.exports.get_shorter = (event, context, callback) => {
     context.callbackWaitsForEmptyEventLoop = false;//tipicamente si mette a false per evitare problemi
     //altrimenti rimarrebbe in attesa di eventi vuoti
     console.log('Received event:', JSON.stringify(event, null, 2)); //stampo su log
@@ -18,12 +18,12 @@ module.exports.get_by_tag = (event, context, callback) => {
     }
     // set default
     //vedo se è definito il campo tag
-    if(!body.tag) {
+    if(!body.duration) {
         //errore se tag non è definito
         callback(null, {
                     statusCode: 500,
                     headers: { 'Content-Type': 'text/plain' },
-                    body: 'Could not fetch the talks. Tag is null.'
+                    body: 'Could not fetch the talks. Duration is null.'
         })
     }
     //definisco variabili di default
@@ -45,21 +45,23 @@ module.exports.get_by_tag = (event, context, callback) => {
         //.skip --> sposto l'inizio della ricerca
         //.limit --> imposto un limite alla ricerca
         //per aggiungere più filtri, si mettono nel .find separati da ",". tipicamente sono in AND, devo specificare con il $ se voglio un OR
-        talk.find({tags: body.tag})
+        
+        talk.find({duration: {$lte: body.duration}} )
             .skip((body.doc_per_page * body.page) - body.doc_per_page)
             .limit(body.doc_per_page)
             .then(talks => {
                     callback(null, {
                         statusCode: 200,
-                        body: JSON.stringify(talks)
+                        body: JSON.stringify(talks)//traduco il risultato in formato JSON, la serializzo
                     })
                 }
-            )//traduco il risultato in formato JSON, la serializzo
+            )
             .catch(err =>
                 callback(null, {
                     statusCode: err.statusCode || 500,
                     headers: { 'Content-Type': 'text/plain' },//in caso di errori, è un TRY-CATCH
                     body: 'Could not fetch the talks.'
+                    
                 })
             );
     });
