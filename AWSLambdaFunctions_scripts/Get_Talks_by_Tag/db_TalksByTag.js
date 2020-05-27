@@ -6,7 +6,7 @@ mongoose.Promise = global.Promise;
 let isConnected;
 
 
-require('dotenv').config({ path: './variables.env' });
+require('dotenv').config({ path: './variables_TalksByTag.env' });
 
 module.exports = connect_to_db = () => {
     if (isConnected) {

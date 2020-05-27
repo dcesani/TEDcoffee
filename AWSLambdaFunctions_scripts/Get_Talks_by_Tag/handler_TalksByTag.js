@@ -1,8 +1,8 @@
-const connect_to_db = require('./db'); //carico il DB, carica il file db.js
+const connect_to_db = require('./db_TalksByTag'); //carico il DB, carica il file db.js
 
 // GET BY TALK HANDLER
 
-const talk = require('./Talk'); //carico il modello dati nel file Talk.js
+const talk = require('./Talk_TalksByTag'); //carico il modello dati nel file Talk.js
 
 //gestisco l'evento
 //evento
